@@ -1,20 +1,28 @@
-import type { StateId, InputSymbol } from '../types/dfa';
+import React from 'react';
+import type { AutomataState } from '../types/automata';
+import { AUTOMATA_STATES } from '../logic/automata';
 import { Network } from 'lucide-react';
 
 interface DFAGraphProps {
-  currentState: StateId;
-  lastTransition: { from: StateId; input: InputSymbol; to: StateId; equation: string } | null;
+  currentState: AutomataState;
+  lastTransition: { fromState: AutomataState; toState: AutomataState; triggerInput: string; equation: string } | null;
 }
 
 export const DFAGraph: React.FC<DFAGraphProps> = ({ currentState, lastTransition }) => {
-  const isEdgeActive = (from: StateId, to: StateId, inputSymbol?: InputSymbol) => {
+  const isEdgeActive = (from: AutomataState, to: AutomataState) => {
     if (!lastTransition) return false;
-    const matchFromTo = lastTransition.from === from && lastTransition.to === to;
-    if (!matchFromTo) return false;
-    if (inputSymbol) {
-      return lastTransition.input === inputSymbol;
-    }
-    return true;
+    return lastTransition.fromState === from && lastTransition.toState === to;
+  };
+
+  const nodePos: Record<AutomataState, { x: number; y: number }> = {
+    q0: { x: 70, y: 100 },
+    q1: { x: 230, y: 100 },
+    q2: { x: 390, y: 100 },
+    q3: { x: 550, y: 100 },
+    q4: { x: 670, y: 100 },
+    q5: { x: 550, y: 280 },
+    q6: { x: 390, y: 280 },
+    q7: { x: 70, y: 280 },
   };
 
   return (
@@ -22,17 +30,16 @@ export const DFAGraph: React.FC<DFAGraphProps> = ({ currentState, lastTransition
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <Network size={16} className="text-sky-400" />
-          DFA STATE GRAPH DIAGRAM
+          MEALY / DFA STATE MACHINE GRAPH (q0 – q7)
         </span>
         <span className="text-xs font-mono font-bold text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-md border border-slate-800">
-          Active: {currentState}
+          Active Node: {currentState} ({AUTOMATA_STATES[currentState].name})
         </span>
       </div>
 
-      <div className="relative flex justify-center items-center py-2 bg-slate-950/70 rounded-xl border border-slate-800/80">
-        <svg viewBox="0 0 520 380" className="w-full max-w-[540px] h-auto">
+      <div className="relative flex justify-center items-center py-4 bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-x-auto">
+        <svg viewBox="0 0 740 360" className="w-full min-w-[680px] max-w-[760px] h-auto">
           <defs>
-            {/* Markers */}
             <marker id="arrow-default" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569" />
             </marker>
@@ -42,207 +49,149 @@ export const DFAGraph: React.FC<DFAGraphProps> = ({ currentState, lastTransition
           </defs>
 
           {/* Initial Arrow into q0 */}
-          <path d="M 20,80 L 50,80" stroke="#64748b" strokeWidth="2" markerEnd="url(#arrow-default)" />
-          <text x="35" y="70" fill="#64748b" fontSize="10" fontWeight="800" textAnchor="middle">
+          <path d="M 15,100 L 38,100" stroke="#64748b" strokeWidth="2" markerEnd="url(#arrow-default)" />
+          <text x="25" y="90" fill="#64748b" fontSize="10" fontWeight="800" textAnchor="middle">
             START
           </text>
 
-          {/* Edge q0 -> q1 (S) */}
+          {/* Core Escalation Edges */}
+          {/* q0 -> q1 (Smoke / Heat) */}
           <path
-            d="M 115,80 L 255,80"
-            stroke={isEdgeActive('q0', 'q1', 'S') ? '#38bdf8' : '#334155'}
-            strokeWidth={isEdgeActive('q0', 'q1', 'S') ? '3.5' : '2'}
-            className={isEdgeActive('q0', 'q1', 'S') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q0', 'q1', 'S') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 100,100 L 200,100"
+            stroke={isEdgeActive('q0', 'q1') ? '#38bdf8' : '#334155'}
+            strokeWidth={isEdgeActive('q0', 'q1') ? '3.5' : '2'}
+            className={isEdgeActive('q0', 'q1') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q0', 'q1') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text
-            x="185"
-            y="70"
-            fill={isEdgeActive('q0', 'q1', 'S') ? '#38bdf8' : '#94a3b8'}
-            fontSize="12"
-            fontWeight="800"
-            textAnchor="middle"
-          >
-            S
+          <text x="150" y="90" fill={isEdgeActive('q0', 'q1') ? '#38bdf8' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="middle">
+            Smoke/Heat
           </text>
 
-          {/* Edge q1 -> q2 (H) */}
+          {/* q1 -> q2 (Smoke + Heat) */}
           <path
-            d="M 290,115 L 290,205"
-            stroke={isEdgeActive('q1', 'q2', 'H') ? '#38bdf8' : '#334155'}
-            strokeWidth={isEdgeActive('q1', 'q2', 'H') ? '3.5' : '2'}
-            className={isEdgeActive('q1', 'q2', 'H') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q1', 'q2', 'H') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 260,100 L 360,100"
+            stroke={isEdgeActive('q1', 'q2') ? '#38bdf8' : '#334155'}
+            strokeWidth={isEdgeActive('q1', 'q2') ? '3.5' : '2'}
+            className={isEdgeActive('q1', 'q2') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q1', 'q2') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text
-            x="305"
-            y="165"
-            fill={isEdgeActive('q1', 'q2', 'H') ? '#38bdf8' : '#94a3b8'}
-            fontSize="12"
-            fontWeight="800"
-            textAnchor="start"
-          >
-            H
+          <text x="310" y="90" fill={isEdgeActive('q1', 'q2') ? '#38bdf8' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="middle">
+            Smoke+Heat
           </text>
 
-          {/* Edge q2 -> q3 (F) */}
+          {/* q2 -> q3 (Flame) */}
           <path
-            d="M 290,275 L 290,320 M 290,320 L 290,325"
-            stroke={isEdgeActive('q2', 'q3', 'F') ? '#ef4444' : '#334155'}
-            strokeWidth={isEdgeActive('q2', 'q3', 'F') ? '3.5' : '2'}
-            className={isEdgeActive('q2', 'q3', 'F') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q2', 'q3', 'F') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 420,100 L 520,100"
+            stroke={isEdgeActive('q2', 'q3') ? '#ef4444' : '#334155'}
+            strokeWidth={isEdgeActive('q2', 'q3') ? '3.5' : '2'}
+            className={isEdgeActive('q2', 'q3') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q2', 'q3') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text
-            x="305"
-            y="300"
-            fill={isEdgeActive('q2', 'q3', 'F') ? '#ef4444' : '#94a3b8'}
-            fontSize="12"
-            fontWeight="800"
-            textAnchor="start"
-          >
-            F
+          <text x="470" y="90" fill={isEdgeActive('q2', 'q3') ? '#ef4444' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="middle">
+            Flame
           </text>
 
-          {/* Self Loops */}
-          {/* q0 Loop (N) */}
+          {/* q3 -> q4 (Evacuate / Manual) */}
           <path
-            d="M 70,52 C 55,20 115,20 100,52"
-            fill="none"
-            stroke={isEdgeActive('q0', 'q0', 'N') ? '#38bdf8' : '#334155'}
-            strokeWidth={isEdgeActive('q0', 'q0', 'N') ? '3' : '2'}
-            className={isEdgeActive('q0', 'q0', 'N') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q0', 'q0', 'N') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 580,100 L 640,100"
+            stroke={isEdgeActive('q3', 'q4') ? '#dc2626' : '#334155'}
+            strokeWidth={isEdgeActive('q3', 'q4') ? '3.5' : '2'}
+            className={isEdgeActive('q3', 'q4') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q3', 'q4') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text x="85" y="18" fill={isEdgeActive('q0', 'q0', 'N') ? '#38bdf8' : '#94a3b8'} fontSize="11" fontWeight="800" textAnchor="middle">
-            N
+          <text x="610" y="90" fill={isEdgeActive('q3', 'q4') ? '#dc2626' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="middle">
+            Alarm
           </text>
 
-          {/* q1 Loop (S) */}
+          {/* Resolution & Fault Paths */}
+          {/* q3 -> q5 (Fire Cleared) */}
           <path
-            d="M 275,52 C 260,20 320,20 305,52"
-            fill="none"
-            stroke={isEdgeActive('q1', 'q1', 'S') ? '#38bdf8' : '#334155'}
-            strokeWidth={isEdgeActive('q1', 'q1', 'S') ? '3' : '2'}
-            className={isEdgeActive('q1', 'q1', 'S') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q1', 'q1', 'S') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 550,130 L 550,250"
+            stroke={isEdgeActive('q3', 'q5') ? '#14b8a6' : '#334155'}
+            strokeWidth={isEdgeActive('q3', 'q5') ? '3.5' : '2'}
+            className={isEdgeActive('q3', 'q5') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q3', 'q5') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text x="290" y="18" fill={isEdgeActive('q1', 'q1', 'S') ? '#38bdf8' : '#94a3b8'} fontSize="11" fontWeight="800" textAnchor="middle">
-            S
+          <text x="560" y="190" fill={isEdgeActive('q3', 'q5') ? '#14b8a6' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="start">
+            Cleared
           </text>
 
-          {/* q2 Loop (H) */}
+          {/* q5 -> q0 (Baseline Return) */}
           <path
-            d="M 325,225 C 360,210 360,265 325,250"
-            fill="none"
-            stroke={isEdgeActive('q2', 'q2', 'H') ? '#38bdf8' : '#334155'}
-            strokeWidth={isEdgeActive('q2', 'q2', 'H') ? '3' : '2'}
-            className={isEdgeActive('q2', 'q2', 'H') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={isEdgeActive('q2', 'q2', 'H') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 520,280 L 100,280"
+            stroke={isEdgeActive('q5', 'q0') ? '#10b981' : '#334155'}
+            strokeWidth={isEdgeActive('q5', 'q0') ? '3.5' : '2'}
+            className={isEdgeActive('q5', 'q0') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q5', 'q0') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text x="365" y="240" fill={isEdgeActive('q2', 'q2', 'H') ? '#38bdf8' : '#94a3b8'} fontSize="11" fontWeight="800" textAnchor="start">
-            H
+          <text x="310" y="270" fill={isEdgeActive('q5', 'q0') ? '#10b981' : '#94a3b8'} fontSize="10" fontWeight="800" textAnchor="middle">
+            All Clear $\to$ q0
           </text>
 
-          {/* q3 Loop (N,S,H,F Absorbing Loop) */}
+          {/* q6 (Fault) -> q0 (Reset) */}
           <path
-            d="M 325,335 C 365,320 365,375 325,360"
-            fill="none"
-            stroke={currentState === 'q3' ? '#ef4444' : '#334155'}
-            strokeWidth={currentState === 'q3' ? '3' : '2'}
-            className={currentState === 'q3' ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
-            markerEnd={currentState === 'q3' ? 'url(#arrow-active)' : 'url(#arrow-default)'}
+            d="M 360,280 L 100,280"
+            stroke={isEdgeActive('q6', 'q0') ? '#38bdf8' : '#334155'}
+            strokeWidth={isEdgeActive('q6', 'q0') ? '3.5' : '2'}
+            className={isEdgeActive('q6', 'q0') ? 'dfa-edge dfa-edge-active' : 'dfa-edge'}
+            markerEnd={isEdgeActive('q6', 'q0') ? 'url(#arrow-active)' : 'url(#arrow-default)'}
           />
-          <text x="370" y="350" fill={currentState === 'q3' ? '#ef4444' : '#94a3b8'} fontSize="11" fontWeight="800" textAnchor="start">
-            N,S,H,F
-          </text>
 
-          {/* State Nodes */}
-          {/* q0 */}
-          <circle
-            cx="85"
-            cy="80"
-            r="32"
-            fill="#0f172a"
-            stroke={currentState === 'q0' ? '#10b981' : '#334155'}
-            strokeWidth={currentState === 'q0' ? '4' : '2'}
-            className="dfa-node-glow"
-            style={currentState === 'q0' ? { filter: 'drop-shadow(0 0 12px rgba(16,185,129,0.8))' } : {}}
-          />
-          <text x="85" y="76" fill={currentState === 'q0' ? '#10b981' : '#f8fafc'} fontSize="14" fontWeight="800" textAnchor="middle">
-            q0
-          </text>
-          <text x="85" y="93" fill={currentState === 'q0' ? '#34d399' : '#64748b'} fontSize="9" fontWeight="700" textAnchor="middle">
-            NORMAL
-          </text>
+          {/* Render State Nodes q0 to q7 */}
+          {(Object.keys(nodePos) as AutomataState[]).map((stateId) => {
+            const { x, y } = nodePos[stateId];
+            const meta = AUTOMATA_STATES[stateId];
+            const isActive = currentState === stateId;
+            const isEmergency = stateId === 'q3' || stateId === 'q4';
 
-          {/* q1 */}
-          <circle
-            cx="290"
-            cy="80"
-            r="32"
-            fill="#0f172a"
-            stroke={currentState === 'q1' ? '#eab308' : '#334155'}
-            strokeWidth={currentState === 'q1' ? '4' : '2'}
-            className="dfa-node-glow"
-            style={currentState === 'q1' ? { filter: 'drop-shadow(0 0 12px rgba(234,179,8,0.8))' } : {}}
-          />
-          <text x="290" y="76" fill={currentState === 'q1' ? '#eab308' : '#f8fafc'} fontSize="14" fontWeight="800" textAnchor="middle">
-            q1
-          </text>
-          <text x="290" y="93" fill={currentState === 'q1' ? '#facc15' : '#64748b'} fontSize="9" fontWeight="700" textAnchor="middle">
-            SMOKE
-          </text>
-
-          {/* q2 */}
-          <circle
-            cx="290"
-            cy="240"
-            r="32"
-            fill="#0f172a"
-            stroke={currentState === 'q2' ? '#f97316' : '#334155'}
-            strokeWidth={currentState === 'q2' ? '4' : '2'}
-            className="dfa-node-glow"
-            style={currentState === 'q2' ? { filter: 'drop-shadow(0 0 12px rgba(249,115,22,0.8))' } : {}}
-          />
-          <text x="290" y="236" fill={currentState === 'q2' ? '#f97316' : '#f8fafc'} fontSize="14" fontWeight="800" textAnchor="middle">
-            q2
-          </text>
-          <text x="290" y="253" fill={currentState === 'q2' ? '#fb923c' : '#64748b'} fontSize="9" fontWeight="700" textAnchor="middle">
-            HIGH TEMP
-          </text>
-
-          {/* q3 (Double Circle Accepting Emergency State) */}
-          <circle
-            cx="290"
-            cy="350"
-            r="32"
-            fill="#0f172a"
-            stroke={currentState === 'q3' ? '#ef4444' : '#334155'}
-            strokeWidth={currentState === 'q3' ? '4' : '2'}
-            className="dfa-node-glow"
-            style={currentState === 'q3' ? { filter: 'drop-shadow(0 0 18px rgba(239,68,68,0.9))' } : {}}
-          />
-          <circle
-            cx="290"
-            cy="350"
-            r="26"
-            fill="none"
-            stroke={currentState === 'q3' ? '#f87171' : '#475569'}
-            strokeWidth="2"
-          />
-          <text x="290" y="346" fill={currentState === 'q3' ? '#ef4444' : '#f8fafc'} fontSize="14" fontWeight="800" textAnchor="middle">
-            q3
-          </text>
-          <text x="290" y="363" fill={currentState === 'q3' ? '#f87171' : '#64748b'} fontSize="9" fontWeight="700" textAnchor="middle">
-            FIRE ALARM
-          </text>
+            return (
+              <g key={stateId} transform={`translate(${x}, ${y})`}>
+                {/* Glow ring */}
+                <circle
+                  r={isEmergency ? '30' : '28'}
+                  fill="#0f172a"
+                  stroke={isActive ? meta.color : '#334155'}
+                  strokeWidth={isActive ? '4' : '2'}
+                  className="dfa-node-glow"
+                  style={isActive ? { filter: `drop-shadow(0 0 16px ${meta.color})` } : {}}
+                />
+                {isEmergency && (
+                  <circle
+                    r="24"
+                    fill="none"
+                    stroke={isActive ? meta.color : '#475569'}
+                    strokeWidth="1.5"
+                  />
+                )}
+                <text
+                  y="-2"
+                  fill={isActive ? meta.color : '#f8fafc'}
+                  fontSize="13"
+                  fontWeight="800"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                >
+                  {stateId}
+                </text>
+                <text
+                  y="12"
+                  fill={isActive ? '#ffffff' : '#64748b'}
+                  fontSize="8"
+                  fontWeight="700"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                >
+                  {meta.name}
+                </text>
+              </g>
+            );
+          })}
         </svg>
       </div>
 
       <div className="flex items-center justify-between text-xs text-slate-400 pt-3">
-        <span>State Q = &#123;q0, q1, q2, q3&#125;</span>
-        <span>Accepting Emergency State: <strong className="text-red-400">q3 (Double Circle)</strong></span>
+        <span>State Set Q = &#123;q0, q1, q2, q3, q4, q5, q6, q7&#125;</span>
+        <span>Accepting Emergency States: <strong className="text-red-400">q3, q4 (Double Circle)</strong></span>
       </div>
     </div>
   );

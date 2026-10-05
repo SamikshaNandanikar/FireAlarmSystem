@@ -10,46 +10,40 @@ interface ConceptCard {
 
 const CONCEPTS: ConceptCard[] = [
   {
-    title: 'What is a DFA?',
-    summary: 'Deterministic Finite Automaton',
+    title: 'What is a Mealy Machine?',
+    summary: 'M = (Q, Σ, δ, λ, q0)',
     details:
-      'A Deterministic Finite Automaton (DFA) is a theoretical model of computation with a finite set of states. For every state and input symbol, there is exactly one deterministic transition to a next state.',
+      'A Mealy Machine is a Finite State Transducer where the output depends on both the current state and the current input. Formally: Q (States), Σ (Inputs), δ (Transition Function), λ (Output Function), q0 (Initial State).',
   },
   {
-    title: 'States (Q)',
-    summary: 'Q = {q0, q1, q2, q3}',
+    title: 'State Set (Q)',
+    summary: 'Q = {q0, q1, q2, q3, q4, q5, q6, q7}',
     details:
-      'States represent the discrete operational phases of the system. In our Fire Alarm system: q0 = NORMAL, q1 = SMOKE DETECTED, q2 = HIGH TEMPERATURE, q3 = FIRE ALARM.',
+      'Q represents the discrete system states: q0 (NORMAL), q1 (WARNING), q2 (FIRE_SUSPECTED), q3 (FIRE_CONFIRMED), q4 (EVACUATION), q5 (FIRE_CLEARED), q6 (SYSTEM_FAULT), q7 (RESET).',
   },
   {
-    title: 'Alphabet (Σ)',
-    summary: 'Σ = {N, S, H, F}',
+    title: 'Input Alphabet (Σ)',
+    summary: 'Σ = {Smoke, Heat, Flame, Manual, Fault, Reset}',
     details:
-      'The input alphabet consists of symbols representing physical sensor events: N = Normal, S = Smoke Detected, H = High Temperature, F = Fire Detected.',
+      'Sensors generate virtual input combinations per building zone: Smoke (S), Heat (H), Flame (F), Manual Pull (M), System Fault (X), Reset (R).',
   },
   {
     title: 'Transition Function (δ)',
     summary: 'δ : Q × Σ → Q',
     details:
-      'The transition function defines the deterministic mapping from a current state and input token to the subsequent state. E.g., δ(q1, H) = q2.',
+      'Determines the next state based on current state and active zone input combination. E.g., δ(q1 [WARNING], Smoke+Heat) = q2 [FIRE_SUSPECTED].',
   },
   {
-    title: 'Initial State (q0)',
-    summary: 'q0 = NORMAL',
+    title: 'Output Function (λ)',
+    summary: 'λ : Q × Σ → Output Relay',
     details:
-      'The designated state where computation begins when the system is initialized or reset.',
+      'Determines hardware relay outputs (Sprinklers, Siren, Evacuation, Lights, Notifications) associated with state transitions. E.g., λ(q3) = {Sprinkler: ON, Siren: ON}.',
   },
   {
-    title: 'Final / Emergency State (F)',
-    summary: 'F = {q3}',
+    title: 'Initial & Absorbing States',
+    summary: 'q0 (Initial), q3/q4 (Accepting Emergency)',
     details:
-      'The set of accepting or terminal states. In our safety system, q3 represents the accepting emergency condition where fire alarms activate.',
-  },
-  {
-    title: 'Absorbing State',
-    summary: 'Trap state q3',
-    details:
-      'An absorbing (trap) state is a state where all input transitions return to itself: δ(q3, σ) = q3 for all σ ∈ Σ. Once entered, the system remains in q3 until an explicit SYSTEM RESET occurs.',
+      'q0 is the safe initial state. q3 and q4 represent accepting emergency conditions where alarms lock until system reset.',
   },
 ];
 
@@ -65,22 +59,22 @@ export const AutomataExplanation: React.FC = () => {
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-6">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <BookOpen size={16} className="text-amber-400" />
-          UNDERSTANDING THE DFA (AUTOMATA THEORY)
+          AUTOMATA THEORY & VIVA PREPARATION GUIDE
         </span>
-        <span className="text-xs text-slate-500 font-medium">Academic Theory & Formal Definition</span>
+        <span className="text-xs text-slate-500 font-medium">Formal Math Definitions</span>
       </div>
 
-      {/* Formal Definition Hero Box */}
+      {/* Formal Mealy Machine Hero Box */}
       <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 mb-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-sky-500/5 to-emerald-500/5 pointer-events-none" />
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">
-          Formal 5-Tuple Definition
+          Mealy Machine Formal 5-Tuple Definition
         </span>
         <div className="text-2xl md:text-4xl font-extrabold font-heading text-sky-400 tracking-wider my-2">
-          M = (Q, Σ, δ, q₀, F)
+          M = (Q, Σ, δ, λ, q₀)
         </div>
         <p className="text-xs md:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed mt-2">
-          "Each sensor event is treated as an input symbol. The DFA determines the next system state based on the current state and the received input token."
+          "The fire alarm system operates as a finite state transducer where sensor inputs (Σ) drive state transitions (δ), and hardware relays (Sprinklers, Sirens, Evacuation Lights) are generated as Mealy outputs (λ)."
         </p>
       </div>
 

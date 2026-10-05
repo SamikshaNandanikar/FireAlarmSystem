@@ -1,11 +1,16 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { StateId, InputSymbol } from '../types/dfa';
-import { STATE_CONFIGS } from '../logic/dfa';
+import type { AutomataState } from '../types/automata';
+import { AUTOMATA_STATES } from '../logic/automata';
 import { ArrowRight, Terminal } from 'lucide-react';
 
 interface TransitionDisplayProps {
-  lastTransition: { from: StateId; input: InputSymbol; to: StateId; equation: string } | null;
+  lastTransition: {
+    fromState: AutomataState;
+    toState: AutomataState;
+    triggerInput: string;
+    equation: string;
+  } | null;
 }
 
 export const TransitionDisplay: React.FC<TransitionDisplayProps> = ({ lastTransition }) => {
@@ -14,7 +19,7 @@ export const TransitionDisplay: React.FC<TransitionDisplayProps> = ({ lastTransi
       <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <Terminal size={15} className="text-emerald-400" />
-          CURRENT TRANSITION
+          CURRENT TRANSITION FORMULA
         </span>
         <span className="text-[11px] font-mono text-slate-400">δ Function Mapping</span>
       </div>
@@ -34,19 +39,19 @@ export const TransitionDisplay: React.FC<TransitionDisplayProps> = ({ lastTransi
               <span
                 className="text-base font-extrabold font-mono px-3 py-1 rounded-lg border"
                 style={{
-                  color: STATE_CONFIGS[lastTransition.from].color,
-                  backgroundColor: STATE_CONFIGS[lastTransition.from].bgGlow,
-                  borderColor: STATE_CONFIGS[lastTransition.from].borderGlow,
+                  color: AUTOMATA_STATES[lastTransition.fromState].color,
+                  backgroundColor: AUTOMATA_STATES[lastTransition.fromState].bgGlow,
+                  borderColor: AUTOMATA_STATES[lastTransition.fromState].borderGlow,
                 }}
               >
-                {lastTransition.from}
+                {lastTransition.fromState} ({AUTOMATA_STATES[lastTransition.fromState].name})
               </span>
             </div>
 
             {/* Animated Input Arrow */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] font-extrabold text-sky-400 uppercase tracking-wider">
-                INPUT: {lastTransition.input}
+                [{lastTransition.triggerInput}]
               </span>
               <motion.div
                 animate={{ x: [0, 6, 0] }}
@@ -63,18 +68,18 @@ export const TransitionDisplay: React.FC<TransitionDisplayProps> = ({ lastTransi
               <span
                 className="text-base font-extrabold font-mono px-3 py-1 rounded-lg border"
                 style={{
-                  color: STATE_CONFIGS[lastTransition.to].color,
-                  backgroundColor: STATE_CONFIGS[lastTransition.to].bgGlow,
-                  borderColor: STATE_CONFIGS[lastTransition.to].borderGlow,
+                  color: AUTOMATA_STATES[lastTransition.toState].color,
+                  backgroundColor: AUTOMATA_STATES[lastTransition.toState].bgGlow,
+                  borderColor: AUTOMATA_STATES[lastTransition.toState].borderGlow,
                 }}
               >
-                {lastTransition.to}
+                {lastTransition.toState} ({AUTOMATA_STATES[lastTransition.toState].name})
               </span>
             </div>
           </motion.div>
         ) : (
           <div className="py-5 text-center text-slate-500 text-xs italic bg-slate-950/60 rounded-xl border border-slate-800/60">
-            System in initial state q0 (NORMAL). Waiting for sensor input...
+            System in initial baseline state q0 (NORMAL). Waiting for sensor input...
           </div>
         )}
       </AnimatePresence>

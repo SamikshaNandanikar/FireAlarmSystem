@@ -1,10 +1,11 @@
-import { useDFA } from './hooks/useDFA';
+import { useAutomata } from './hooks/useAutomata';
 import { Header } from './components/Header';
 import { EmergencyAlert } from './components/EmergencyAlert';
 import { SystemStatus } from './components/SystemStatus';
 import { Environment } from './components/Environment';
-import { SensorDashboard } from './components/SensorDashboard';
-import { SensorControls } from './components/SensorControls';
+import { BuildingMap } from './components/BuildingMap';
+import { VirtualSensorPanel } from './components/VirtualSensorPanel';
+import { ResponsePanel } from './components/ResponsePanel';
 import { DFAGraph } from './components/DFAGraph';
 import { TransitionDisplay } from './components/TransitionDisplay';
 import { TransitionHistory } from './components/TransitionHistory';
@@ -16,88 +17,90 @@ import { ToastContainer } from './components/ToastContainer';
 
 export function App() {
   const {
-    currentState,
-    lastInput,
+    zones,
+    selectedZoneId,
+    setSelectedZoneId,
+    buildingState,
+    activeMealyOutput,
     lastTransition,
     history,
     toasts,
-    isDemoMode,
-    triggerInput,
+    demoStep,
+    toggleSensor,
     resetSystem,
     clearHistory,
-    toggleDemoMode,
+    startAutoSimulation,
     removeToast,
-  } = useDFA();
+  } = useAutomata();
 
-  const getRecommendedNextInput = () => {
-    if (!isDemoMode) return undefined;
-    switch (currentState) {
-      case 'q0': return 'S';
-      case 'q1': return 'H';
-      case 'q2': return 'F';
-      default: return undefined;
-    }
-  };
+  const selectedZone = zones[selectedZoneId];
 
   return (
     <div className="min-h-screen bg-[#070a14] text-slate-100 p-4 md:p-8 max-w-7xl mx-auto flex flex-col font-sans selection:bg-sky-500 selection:text-slate-950">
       {/* Header with audio controls */}
       <Header />
 
-      {/* Emergency Alert Banner (q3 absorbing state active) */}
-      <EmergencyAlert currentState={currentState} />
+      {/* Emergency Alert Banner (q3, q4, q6 active) */}
+      <EmergencyAlert currentState={buildingState} />
 
-      {/* Top Grid: Hero Status & Environment Simulation */}
+      {/* Top Grid: Hero System Status & Live Environment Simulation */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <SystemStatus
-          currentState={currentState}
-          lastInput={lastInput}
+          currentState={buildingState}
+          selectedZoneName={`${selectedZone.code}: ${selectedZone.name}`}
           lastTransition={lastTransition}
         />
-        <Environment currentState={currentState} />
+        <Environment currentState={buildingState} />
       </div>
 
-      {/* Sensor Monitoring Cards */}
-      <SensorDashboard currentState={currentState} />
-
-      {/* Sensor Input Buttons */}
-      <SensorControls
-        onTriggerInput={triggerInput}
-        recommendedInput={getRecommendedNextInput()}
+      {/* 4 Virtual Building Zones Selection Map */}
+      <BuildingMap
+        zones={zones}
+        selectedZoneId={selectedZoneId}
+        onSelectZone={setSelectedZoneId}
       />
 
-      {/* Demo Mode Guide & Large System Reset */}
+      {/* Virtual Sensor Switchboard for Selected Zone */}
+      <VirtualSensorPanel
+        selectedZone={selectedZone}
+        onToggleSensor={toggleSensor}
+      />
+
+      {/* Mealy Machine Emergency Response Panel */}
+      <ResponsePanel
+        currentState={buildingState}
+        mealyOutput={activeMealyOutput}
+      />
+
+      {/* 8-Step Auto Run Fire Simulation & Reset Controls */}
       <DemoMode
-        currentState={currentState}
-        isDemoMode={isDemoMode}
-        onToggleDemoMode={toggleDemoMode}
+        demoStep={demoStep}
+        onStartAutoSimulation={startAutoSimulation}
         onResetSystem={resetSystem}
-        onTriggerInput={triggerInput}
       />
 
-      {/* Middle Grid: DFA Graph & Transition Display/History */}
+      {/* Middle Grid: SVG State Graph (q0-q7) & Transition Formula / Log */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <DFAGraph currentState={currentState} lastTransition={lastTransition} />
+        <DFAGraph currentState={buildingState} lastTransition={lastTransition} />
         <div className="flex flex-col justify-between gap-6">
           <TransitionDisplay lastTransition={lastTransition} />
           <TransitionHistory history={history} onClearHistory={clearHistory} />
         </div>
       </div>
 
-      {/* DFA Transition Matrix Table */}
+      {/* Mealy Machine Transition Table */}
       <TransitionTable
-        currentState={currentState}
-        lastInput={lastInput}
+        currentState={buildingState}
         lastTransition={lastTransition}
       />
 
-      {/* Academic Automata Theory Section */}
+      {/* Educational Automata Theory & Viva Preparation Section */}
       <AutomataExplanation />
 
       {/* Footer */}
       <Footer />
 
-      {/* Toast Notifications */}
+      {/* Floating Toast Notifications */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     </div>
   );

@@ -1,104 +1,99 @@
 import React from 'react';
-import type { StateId, InputSymbol } from '../types/dfa';
-import { DFA_TRANSITION_MATRIX, STATE_CONFIGS } from '../logic/dfa';
+import type { AutomataState } from '../types/automata';
+import { AUTOMATA_STATES, getMealyOutput } from '../logic/automata';
 import { Table } from 'lucide-react';
 
 interface TransitionTableProps {
-  currentState: StateId;
-  lastInput: InputSymbol | null;
-  lastTransition: { from: StateId; input: InputSymbol; to: StateId; equation: string } | null;
+  currentState: AutomataState;
+  lastTransition: { fromState: AutomataState; toState: AutomataState; triggerInput: string; equation: string } | null;
 }
 
 export const TransitionTable: React.FC<TransitionTableProps> = ({
   currentState,
-  lastInput,
   lastTransition,
 }) => {
-  const states: StateId[] = ['q0', 'q1', 'q2', 'q3'];
-  const inputs: InputSymbol[] = ['N', 'S', 'H', 'F'];
+  const tableRows: Array<{
+    state: AutomataState | 'Any';
+    condition: string;
+    nextState: AutomataState;
+    outputLabel: string;
+  }> = [
+    { state: 'q0', condition: 'No dangerous inputs (All OFF)', nextState: 'q0', outputLabel: 'Normal Baseline' },
+    { state: 'q0', condition: 'Smoke ON OR Heat ON', nextState: 'q1', outputLabel: 'Warning Beep + Light ON' },
+    { state: 'q1', condition: 'Smoke ON + Heat ON', nextState: 'q2', outputLabel: 'Double Warning Beep + Alert' },
+    { state: 'q2', condition: 'Smoke + Heat + Flame ON', nextState: 'q3', outputLabel: 'Siren ON + Sprinkler ON' },
+    { state: 'q3', condition: 'Manual Emergency Pull / Escalation', nextState: 'q4', outputLabel: 'High Priority Siren + Evacuate' },
+    { state: 'q3', condition: 'Hazard Cleared (All OFF)', nextState: 'q5', outputLabel: 'Cleared Chime + Hazard OFF' },
+    { state: 'Any', condition: 'Sensor Fault ON', nextState: 'q6', outputLabel: 'Fault Buzz + Maintenance' },
+    { state: 'Any', condition: 'System Reset Pressed', nextState: 'q7', outputLabel: 'Reset Chime -> q0 Baseline' },
+  ];
 
   return (
     <div className="glass-panel p-6 mb-6">
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <Table size={16} className="text-emerald-400" />
-          DFA TRANSITION TABLE MATRIX: δ(Q, Σ) → Q
+          MEALY MACHINE TRANSITION TABLE: δ(State, Input) → Next State, λ(State, Input) → Output
         </span>
-        <span className="text-xs text-slate-500 font-medium">Highlight indicates active state and input selection</span>
+        <span className="text-xs text-slate-500 font-medium">Highlight indicates active state and transition rule</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs md:text-sm">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 font-heading">
-              <th className="p-3 bg-slate-950/60 font-bold">Current State (Q)</th>
-              {inputs.map((inputSym) => {
-                const isSelectedCol = lastInput === inputSym;
-                return (
-                  <th
-                    key={inputSym}
-                    className={`p-3 text-center font-bold font-mono transition-colors ${
-                      isSelectedCol ? 'bg-sky-500/20 text-sky-400 border-x border-sky-500/40' : 'bg-slate-950/40'
-                    }`}
-                  >
-                    Input: {inputSym}
-                  </th>
-                );
-              })}
+            <tr className="border-b border-slate-800 text-slate-400 font-heading bg-slate-950/60">
+              <th className="p-3 font-bold">Current State (Q)</th>
+              <th className="p-3 font-bold">Virtual Sensor Input Condition (Σ)</th>
+              <th className="p-3 font-bold">Next State (Q')</th>
+              <th className="p-3 font-bold">Mealy Machine Response Output (λ)</th>
             </tr>
           </thead>
           <tbody>
-            {states.map((stateId) => {
-              const isCurrentRow = currentState === stateId;
-              const stateConf = STATE_CONFIGS[stateId];
+            {tableRows.map((row, idx) => {
+              const isAnyState = row.state === 'Any';
+              const isCurrentRow = currentState === row.state || (isAnyState && currentState !== 'q0');
+              const isLastTraversed = lastTransition?.toState === row.nextState && lastTransition?.fromState === row.state;
+              const meta = AUTOMATA_STATES[row.nextState];
+              const mealy = getMealyOutput(row.nextState);
+              const displayBadgeMeta = isAnyState ? AUTOMATA_STATES['q0'] : AUTOMATA_STATES[row.state as AutomataState];
 
               return (
                 <tr
-                  key={stateId}
-                  className={`border-b border-slate-800/60 transition-colors ${
-                    isCurrentRow ? 'bg-slate-900/90 font-semibold' : 'hover:bg-slate-900/30'
+                  key={idx}
+                  className={`border-b border-slate-800/60 transition-all ${
+                    isLastTraversed
+                      ? 'bg-sky-500/20 text-white font-bold border-l-4 border-l-sky-400'
+                      : isCurrentRow
+                      ? 'bg-slate-900/90 font-semibold'
+                      : 'hover:bg-slate-900/40 text-slate-300'
                   }`}
                 >
-                  {/* Current State Cell */}
-                  <td className="p-3 font-mono font-bold flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: stateConf.color }}
-                    />
-                    <span style={{ color: stateConf.color }}>
-                      {stateId} ({stateConf.name})
+                  <td className="p-3 font-mono font-bold">
+                    <span className={`px-2 py-0.5 rounded border text-xs ${displayBadgeMeta.badgeBg}`}>
+                      {row.state}
                     </span>
-                    {stateId === 'q3' && (
-                      <span className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded font-sans">
-                        Absorbing
-                      </span>
-                    )}
                   </td>
-
-                  {/* Transition Cells for inputs N, S, H, F */}
-                  {inputs.map((inputSym) => {
-                    const resultState = DFA_TRANSITION_MATRIX[stateId][inputSym];
-                    const isCellTarget =
-                      lastTransition?.from === stateId && lastTransition?.input === inputSym;
-                    const isColSelected = lastInput === inputSym;
-
-                    return (
-                      <td
-                        key={inputSym}
-                        className={`p-3 text-center font-mono font-bold transition-all ${
-                          isCellTarget
-                            ? 'bg-sky-500/30 text-white ring-2 ring-sky-400/80 shadow-[0_0_15px_rgba(56,189,248,0.4)] scale-105 rounded-md'
-                            : isCurrentRow && isColSelected
-                            ? 'bg-sky-500/15 text-sky-300'
-                            : isCurrentRow
-                            ? 'bg-slate-800/40 text-slate-200'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        {resultState}
-                      </td>
-                    );
-                  })}
+                  <td className="p-3 font-medium text-slate-200">{row.condition}</td>
+                  <td className="p-3 font-mono font-bold">
+                    <span className={`px-2 py-0.5 rounded border text-xs ${meta.badgeBg}`}>
+                      {row.nextState} ({meta.name})
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-sky-300">{row.outputLabel}</span>
+                      {mealy.sprinkler && (
+                        <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px]">
+                          💧 Sprinkler ON
+                        </span>
+                      )}
+                      {mealy.siren && (
+                        <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px]">
+                          🔊 Siren ON
+                        </span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               );
             })}
